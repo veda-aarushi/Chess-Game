@@ -17,26 +17,6 @@ public class Chess {
             JScrollPane historyScroll = new JScrollPane(board.getHistoryArea());
 
             JButton restartBtn = new JButton("Restart");
-            restartBtn.addActionListener(e -> {
-                frame.getContentPane().removeAll();
-                ChessBoard newBoard = new ChessBoard(difficultyBox.getSelectedIndex() + 1);
-                JScrollPane newScroll = new JScrollPane(newBoard.getHistoryArea());
-
-                JPanel top = new JPanel(new BorderLayout());
-                top.add(restartBtn, BorderLayout.WEST);
-                top.add(difficultyBox, BorderLayout.EAST);
-                top.add(newScroll, BorderLayout.CENTER);
-
-                JPanel timerPanel = new JPanel(new GridLayout(1, 2));
-                timerPanel.add(newBoard.getWhiteTimerLabel());
-                timerPanel.add(newBoard.getBlackTimerLabel());
-
-                frame.add(top, BorderLayout.NORTH);
-                frame.add(newBoard, BorderLayout.CENTER);
-                frame.add(timerPanel, BorderLayout.SOUTH);
-                frame.revalidate();
-                frame.repaint();
-            });
 
             JPanel top = new JPanel(new BorderLayout());
             top.add(restartBtn, BorderLayout.WEST);
@@ -50,6 +30,27 @@ public class Chess {
             frame.add(top, BorderLayout.NORTH);
             frame.add(board, BorderLayout.CENTER);
             frame.add(timerPanel, BorderLayout.SOUTH);
+
+            restartBtn.addActionListener(e -> {
+                frame.getContentPane().removeAll();
+                ChessBoard newBoard = new ChessBoard(difficultyBox.getSelectedIndex() + 1);
+                JScrollPane newScroll = new JScrollPane(newBoard.getHistoryArea());
+
+                JPanel newTop = new JPanel(new BorderLayout());
+                newTop.add(restartBtn, BorderLayout.WEST);
+                newTop.add(difficultyBox, BorderLayout.EAST);
+                newTop.add(newScroll, BorderLayout.CENTER);
+
+                JPanel newTimerPanel = new JPanel(new GridLayout(1, 2));
+                newTimerPanel.add(newBoard.getWhiteTimerLabel());
+                newTimerPanel.add(newBoard.getBlackTimerLabel());
+
+                frame.add(newTop, BorderLayout.NORTH);
+                frame.add(newBoard, BorderLayout.CENTER);
+                frame.add(newTimerPanel, BorderLayout.SOUTH);
+                frame.revalidate();
+                frame.repaint();
+            });
 
             frame.setVisible(true);
         });

@@ -1,11 +1,12 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class ChessBoard extends JPanel {
     private int aiDepth;
     private JLabel whiteTimerLabel, blackTimerLabel;
     private Timer whiteTimer, blackTimer;
-    private int whiteSeconds = 300, blackSeconds = 300; // 5 minutes per player
+    private int whiteSeconds = 300, blackSeconds = 300;
     public static final int SIZE = 8;
     private Square[][] board = new Square[SIZE][SIZE];
     private Square selectedSquare = null;
@@ -31,12 +32,50 @@ public class ChessBoard extends JPanel {
         }
 
         initializePieces();
+
+        whiteTimerLabel = new JLabel("White: " + formatTime(whiteSeconds));
+        blackTimerLabel = new JLabel("Black: " + formatTime(blackSeconds));
+
+        whiteTimer = new Timer(1000, e -> {
+            whiteSeconds--;
+            whiteTimerLabel.setText("White: " + formatTime(whiteSeconds));
+            if (whiteSeconds <= 0) {
+                ((Timer) e.getSource()).stop();
+                JOptionPane.showMessageDialog(this, "Black wins by timeout!");
+                disableBoard();
+            }
+        });
+
+        blackTimer = new Timer(1000, e -> {
+            blackSeconds--;
+            blackTimerLabel.setText("Black: " + formatTime(blackSeconds));
+            if (blackSeconds <= 0) {
+                ((Timer) e.getSource()).stop();
+                JOptionPane.showMessageDialog(this, "White wins by timeout!");
+                disableBoard();
+            }
+        });
+
+        whiteTimer.start();
+    }
+
+    private String formatTime(int seconds) {
+        int min = seconds / 60;
+        int sec = seconds % 60;
+        return String.format("%02d:%02d", min, sec);
+    }
+
+    public JLabel getWhiteTimerLabel() {
+        return whiteTimerLabel;
+    }
+
+    public JLabel getBlackTimerLabel() {
+        return blackTimerLabel;
     }
 
     public JTextArea getHistoryArea() {
         return moveHistory;
     }
-
     private void initializePieces() {
         for (int col = 0; col < SIZE; col++) {
             board[1][col].setPiece(new Pawn(false));
