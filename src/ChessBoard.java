@@ -6,6 +6,7 @@ public class ChessBoard extends JPanel {
     private Square[][] board = new Square[SIZE][SIZE];
     private Square selectedSquare = null;
     private boolean whiteTurn = true;
+    private Square enPassantTarget = null;
 
     public ChessBoard() {
         this.setLayout(new GridLayout(SIZE, SIZE));
@@ -72,28 +73,120 @@ public class ChessBoard extends JPanel {
             int startCol = selectedSquare.getCol();
             int endRow = clicked.getRow();
             int endCol = clicked.getCol();
+            Piece[][] matrix = getPieceMatrix();
 
-            if (selectedPiece.isValidMove(startRow, startCol, endRow, endCol, getPieceMatrix())) {
+            boolean valid = selectedPiece.isValidMove(startRow, startCol, endRow, endCol, matrix);
+
+            // Special move: castling
+            if (selectedPiece instanceof King && Math.abs(endCol - startCol) == 2 && startRow == endRow) {
+                valid = canCastle(startRow, startCol, endCol);
+                if (valid) doCastle(startRow, startCol, endCol);
+            }
+
+            // Special move: en passant
+            if (selectedPiece instanceof Pawn && endCol != startCol && clicked.getPiece() == null) {
+                if (enPassantTarget != null && endRow == enPassantTarget.getRow() && endCol == enPassantTarget.getCol()) {
+                    clicked.setPiece(selectedPiece);
+                    board[startRow][startCol].setPiece(null);
+                    board[startRow][endCol].setPiece(null); // captured pawn
+                    finishTurn(clicked, selectedPiece);
+                    return;
+                }
+            }
+
+            if (valid) {
                 clicked.setPiece(selectedPiece);
                 selectedSquare.setPiece(null);
-                resetSquareColor(selectedSquare);
-                resetSquareColor(clicked);
-                whiteTurn = !whiteTurn;
 
-                if (isKingInCheck(!whiteTurn)) {
-                    if (isCheckmate(!whiteTurn)) {
-                        JOptionPane.showMessageDialog(this, (whiteTurn ? "White" : "Black") + " wins by checkmate!");
-                        disableBoard();
-                    } else {
-                        JOptionPane.showMessageDialog(this, (whiteTurn ? "Black" : "White") + " is in check!");
-                    }
+                // Pawn Promotion
+                if (selectedPiece instanceof Pawn && (endRow == 0 || endRow == 7)) {
+                    clicked.setPiece(new Queen(selectedPiece.isWhite())); // auto promote to Queen
                 }
+
+                // En Passant Target Update
+                if (selectedPiece instanceof Pawn && Math.abs(endRow - startRow) == 2) {
+                    enPassantTarget = board[(startRow + endRow) / 2][endCol];
+                } else {
+                    enPassantTarget = null;
+                }
+
+                finishTurn(clicked, selectedPiece);
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid move!");
                 resetSquareColor(selectedSquare);
+                selectedSquare = null;
             }
+        }
+    }
 
-            selectedSquare = null;
+    private void finishTurn(Square movedTo, Piece movedPiece) {
+        resetSquareColor(selectedSquare);
+        resetSquareColor(movedTo);
+        whiteTurn = !whiteTurn;
+        selectedSquare = null;
+
+        if (isKingInCheck(!whiteTurn)) {
+            if (isCheckmate(!whiteTurn)) {
+                JOptionPane.showMessageDialog(this, (whiteTurn ? "White" : "Black") + " wins by checkmate!");
+                disableBoard();
+            } else {
+                JOptionPane.showMessageDialog(this, (whiteTurn ? "Black" : "White") + " is in check!");
+            }
+        }
+    }
+
+    private boolean canCastle(int row, int kingCol, int endCol) {
+        if (isKingInCheck(whiteTurn)) return false;
+
+        int direction = endCol - kingCol > 0 ? 1 : -1;
+        int rookCol = (direction == 1) ? 7 : 0;
+
+        Piece rook = board[row][rookCol].getPiece();
+        if (!(rook instanceof Rook) || rook.isWhite() != whiteTurn) return false;
+
+        // Check path is clear
+        for (int c = kingCol + direction; c != rookCol; c += direction) {
+            if (board[row][c].getPiece() != null) return false;
+        }
+
+        // Ensure squares king crosses are not under attack
+        for (int c = kingCol; c != endCol + direction; c += direction) {
+            Piece backup = board[row][c].getPiece();
+            board[row][c].setPiece(new King(whiteTurn));
+            if (isKingInCheck(whiteTurn)) {
+                board[row][c].setPiece(backup);
+                return false;
+            }
+            board[row][c].setPiece(backup);
+        }
+
+        return true;
+    }
+
+    private void doCastle(int row, int kingCol, int endCol) {
+        int direction = endCol - kingCol > 0 ? 1 : -1;
+        int rookCol = (direction == 1) ? 7 : 0;
+        int newRookCol = endCol - direction;
+
+        Piece king = board[row][kingCol].getPiece();
+        Piece rook = board[row][rookCol].getPiece();
+
+        board[row][endCol].setPiece(king);
+        board[row][kingCol].setPiece(null);
+
+        board[row][newRookCol].setPiece(rook);
+        board[row][rookCol].setPiece(null);
+
+        whiteTurn = !whiteTurn;
+        selectedSquare = null;
+
+        if (isKingInCheck(!whiteTurn)) {
+            if (isCheckmate(!whiteTurn)) {
+                JOptionPane.showMessageDialog(this, (whiteTurn ? "White" : "Black") + " wins by checkmate!");
+                disableBoard();
+            } else {
+                JOptionPane.showMessageDialog(this, (whiteTurn ? "Black" : "White") + " is in check!");
+            }
         }
     }
 
