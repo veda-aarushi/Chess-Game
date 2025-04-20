@@ -56,14 +56,12 @@ public class ChessBoard extends JPanel {
         Piece clickedPiece = clicked.getPiece();
 
         if (selectedSquare == null) {
-            // First click
             if (clickedPiece != null && clickedPiece.isWhite() == whiteTurn) {
                 selectedSquare = clicked;
                 clicked.setBackground(Color.YELLOW);
             }
         } else {
             if (clicked == selectedSquare) {
-                // Deselect
                 resetSquareColor(clicked);
                 selectedSquare = null;
                 return;
@@ -81,6 +79,15 @@ public class ChessBoard extends JPanel {
                 resetSquareColor(selectedSquare);
                 resetSquareColor(clicked);
                 whiteTurn = !whiteTurn;
+
+                if (isKingInCheck(!whiteTurn)) {
+                    if (isCheckmate(!whiteTurn)) {
+                        JOptionPane.showMessageDialog(this, (whiteTurn ? "White" : "Black") + " wins by checkmate!");
+                        disableBoard();
+                    } else {
+                        JOptionPane.showMessageDialog(this, (whiteTurn ? "Black" : "White") + " is in check!");
+                    }
+                }
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid move!");
                 resetSquareColor(selectedSquare);
@@ -104,5 +111,75 @@ public class ChessBoard extends JPanel {
             }
         }
         return matrix;
+    }
+
+    private Square findKing(boolean isWhite) {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                Piece p = board[i][j].getPiece();
+                if (p instanceof King && p.isWhite() == isWhite) {
+                    return board[i][j];
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isKingInCheck(boolean isWhiteKing) {
+        Square kingSquare = findKing(isWhiteKing);
+        if (kingSquare == null) return false;
+
+        int kingRow = kingSquare.getRow();
+        int kingCol = kingSquare.getCol();
+
+        Piece[][] matrix = getPieceMatrix();
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                Piece attacker = matrix[i][j];
+                if (attacker != null && attacker.isWhite() != isWhiteKing) {
+                    if (attacker.isValidMove(i, j, kingRow, kingCol, matrix)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isCheckmate(boolean defendingWhite) {
+        Piece[][] matrix = getPieceMatrix();
+
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                Piece p = matrix[i][j];
+                if (p != null && p.isWhite() == defendingWhite) {
+                    for (int x = 0; x < SIZE; x++) {
+                        for (int y = 0; y < SIZE; y++) {
+                            if (p.isValidMove(i, j, x, y, matrix)) {
+                                Piece backup = matrix[x][y];
+                                matrix[x][y] = p;
+                                matrix[i][j] = null;
+
+                                boolean stillInCheck = isKingInCheck(defendingWhite);
+
+                                matrix[i][j] = p;
+                                matrix[x][y] = backup;
+
+                                if (!stillInCheck) return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private void disableBoard() {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                board[i][j].setEnabled(false);
+            }
+        }
     }
 }
