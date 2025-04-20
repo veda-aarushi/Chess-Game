@@ -1,7 +1,6 @@
 public class AIPlayer {
-    public static final int MAX_DEPTH = 2;
 
-    public static void makeAIMove(ChessBoard board) {
+    public static void makeAIMove(ChessBoard board, int depth) {
         Move bestMove = null;
         int bestValue = Integer.MIN_VALUE;
 
@@ -10,15 +9,16 @@ public class AIPlayer {
         for (int i = 0; i < ChessBoard.SIZE; i++) {
             for (int j = 0; j < ChessBoard.SIZE; j++) {
                 Piece p = matrix[i][j];
-                if (p != null && !p.isWhite()) {
+                if (p != null && !p.isWhite()) { // Only Black pieces (AI)
                     for (int x = 0; x < ChessBoard.SIZE; x++) {
                         for (int y = 0; y < ChessBoard.SIZE; y++) {
                             if (p.isValidMove(i, j, x, y, matrix)) {
                                 Piece[][] newBoard = copyBoard(matrix);
+                                Piece captured = newBoard[x][y];
                                 newBoard[x][y] = p;
                                 newBoard[i][j] = null;
 
-                                int score = minimax(newBoard, MAX_DEPTH - 1, true);
+                                int score = minimax(newBoard, depth - 1, true);
 
                                 if (score > bestValue) {
                                     bestValue = score;
@@ -32,7 +32,7 @@ public class AIPlayer {
         }
 
         if (bestMove != null) {
-            board.movePiece(bestMove);
+            board.movePiece(bestMove); // triggers AI move on real board
         }
     }
 
@@ -48,14 +48,14 @@ public class AIPlayer {
                     for (int x = 0; x < ChessBoard.SIZE; x++) {
                         for (int y = 0; y < ChessBoard.SIZE; y++) {
                             if (p.isValidMove(i, j, x, y, board)) {
-                                Piece temp = board[x][y];
+                                Piece captured = board[x][y];
                                 board[x][y] = p;
                                 board[i][j] = null;
 
                                 int score = minimax(board, depth - 1, !maximizing);
 
                                 board[i][j] = p;
-                                board[x][y] = temp;
+                                board[x][y] = captured;
 
                                 best = maximizing ? Math.max(best, score) : Math.min(best, score);
                             }
@@ -98,10 +98,11 @@ public class AIPlayer {
         return copy;
     }
 
-    static class Move {
-        int fromRow, fromCol, toRow, toCol;
+    // Move class to store AI moves
+    public static class Move {
+        public final int fromRow, fromCol, toRow, toCol;
 
-        Move(int fromRow, int fromCol, int toRow, int toCol) {
+        public Move(int fromRow, int fromCol, int toRow, int toCol) {
             this.fromRow = fromRow;
             this.fromCol = fromCol;
             this.toRow = toRow;

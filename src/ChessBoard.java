@@ -3,6 +3,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class ChessBoard extends JPanel {
+    private int aiDepth;
     public static final int SIZE = 8;
     private Square[][] board = new Square[SIZE][SIZE];
     private Square selectedSquare = null;
@@ -10,7 +11,8 @@ public class ChessBoard extends JPanel {
     private Square enPassantTarget = null;
     private JTextArea moveHistory = new JTextArea(5, 20);
 
-    public ChessBoard() {
+    public ChessBoard(int aiDepth) {
+        this.aiDepth = aiDepth;
         this.setLayout(new GridLayout(SIZE, SIZE));
         moveHistory.setEditable(false);
         boolean isWhite = false;
@@ -156,7 +158,7 @@ public class ChessBoard extends JPanel {
             new Thread(() -> {
                 try {
                     Thread.sleep(500);
-                    AIPlayer.makeAIMove(this);
+                    AIPlayer.makeAIMove(this, aiDepth);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
