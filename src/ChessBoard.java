@@ -4,6 +4,8 @@ import java.awt.*;
 public class ChessBoard extends JPanel {
     public static final int SIZE = 8;
     private Square[][] board = new Square[SIZE][SIZE];
+    private Square selectedSquare = null;
+    private boolean whiteTurn = true;
 
     public ChessBoard() {
         this.setLayout(new GridLayout(SIZE, SIZE));
@@ -15,9 +17,11 @@ public class ChessBoard extends JPanel {
                 Square square = new Square(row, col, isWhite);
                 board[row][col] = square;
                 this.add(square);
+                square.addActionListener(e -> handleClick(square));
                 isWhite = !isWhite;
             }
         }
+
         initializePieces();
     }
 
@@ -46,5 +50,39 @@ public class ChessBoard extends JPanel {
         board[0][4].setPiece(new King(false));
         board[7][3].setPiece(new Queen(true));
         board[7][4].setPiece(new King(true));
+    }
+
+    private void handleClick(Square clicked) {
+        Piece clickedPiece = clicked.getPiece();
+
+        if (selectedSquare == null) {
+            // First click
+            if (clickedPiece != null && clickedPiece.isWhite() == whiteTurn) {
+                selectedSquare = clicked;
+                clicked.setBackground(Color.YELLOW);
+            }
+        } else {
+            // Second click
+            if (clicked == selectedSquare) {
+                resetSquareColor(clicked);
+                selectedSquare = null;
+                return;
+            }
+
+            clicked.setPiece(selectedSquare.getPiece());
+            selectedSquare.setPiece(null);
+
+            resetSquareColor(selectedSquare);
+            resetSquareColor(clicked);
+
+            whiteTurn = !whiteTurn;
+            selectedSquare = null;
+        }
+    }
+
+    private void resetSquareColor(Square square) {
+        int r = square.getRow();
+        int c = square.getCol();
+        square.setBackground((r + c) % 2 == 0 ? Color.WHITE : Color.GRAY);
     }
 }

@@ -10,9 +10,9 @@ public class Square extends JButton {
         this.col = col;
 
         setBackground((row + col) % 2 == 0 ? Color.WHITE : Color.GRAY);
-        setFont(new Font("SansSerif", Font.PLAIN, 48)); // Big enough to fill square
-        setMargin(new Insets(0, 0, 0, 0));              // No button padding
-        setFocusPainted(false);                         // No border highlight
+        setFont(new Font("SansSerif", Font.PLAIN, 48));
+        setMargin(new Insets(0, 0, 0, 0));
+        setFocusPainted(false);
         setHorizontalAlignment(SwingConstants.CENTER);
         setVerticalAlignment(SwingConstants.CENTER);
     }
@@ -26,11 +26,6 @@ public class Square extends JButton {
         return piece;
     }
 
-    public int getRow() {
-        return row;
-    }
-
-    public int getCol() {
-        return col;
-    }
+    public int getRow() { return row; }
+    public int getCol() { return col; }
 }
