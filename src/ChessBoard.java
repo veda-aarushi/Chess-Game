@@ -1,9 +1,11 @@
-
 import javax.swing.*;
 import java.awt.*;
 
 public class ChessBoard extends JPanel {
     private int aiDepth;
+    private JLabel whiteTimerLabel, blackTimerLabel;
+    private Timer whiteTimer, blackTimer;
+    private int whiteSeconds = 300, blackSeconds = 300; // 5 minutes per player
     public static final int SIZE = 8;
     private Square[][] board = new Square[SIZE][SIZE];
     private Square selectedSquare = null;

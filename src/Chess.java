@@ -8,9 +8,10 @@ public class Chess {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(900, 800);
             frame.setResizable(false);
+
             String[] levels = {"Easy", "Medium", "Hard"};
             JComboBox<String> difficultyBox = new JComboBox<>(levels);
-            difficultyBox.setSelectedIndex(1); // Default: Medium
+            difficultyBox.setSelectedIndex(1); // Default to Medium
 
             ChessBoard board = new ChessBoard(difficultyBox.getSelectedIndex() + 1);
             JScrollPane historyScroll = new JScrollPane(board.getHistoryArea());
@@ -26,8 +27,13 @@ public class Chess {
                 top.add(difficultyBox, BorderLayout.EAST);
                 top.add(newScroll, BorderLayout.CENTER);
 
+                JPanel timerPanel = new JPanel(new GridLayout(1, 2));
+                timerPanel.add(newBoard.getWhiteTimerLabel());
+                timerPanel.add(newBoard.getBlackTimerLabel());
+
                 frame.add(top, BorderLayout.NORTH);
                 frame.add(newBoard, BorderLayout.CENTER);
+                frame.add(timerPanel, BorderLayout.SOUTH);
                 frame.revalidate();
                 frame.repaint();
             });
@@ -37,8 +43,13 @@ public class Chess {
             top.add(difficultyBox, BorderLayout.EAST);
             top.add(historyScroll, BorderLayout.CENTER);
 
+            JPanel timerPanel = new JPanel(new GridLayout(1, 2));
+            timerPanel.add(board.getWhiteTimerLabel());
+            timerPanel.add(board.getBlackTimerLabel());
+
             frame.add(top, BorderLayout.NORTH);
             frame.add(board, BorderLayout.CENTER);
+            frame.add(timerPanel, BorderLayout.SOUTH);
 
             frame.setVisible(true);
         });
