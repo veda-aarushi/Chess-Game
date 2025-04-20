@@ -8,9 +8,11 @@ public class ChessBoard extends JPanel {
     private Square selectedSquare = null;
     private boolean whiteTurn = true;
     private Square enPassantTarget = null;
+    private JTextArea moveHistory = new JTextArea(5, 20);
 
     public ChessBoard() {
         this.setLayout(new GridLayout(SIZE, SIZE));
+        moveHistory.setEditable(false);
         boolean isWhite = false;
 
         for (int row = 0; row < SIZE; row++) {
@@ -25,6 +27,10 @@ public class ChessBoard extends JPanel {
         }
 
         initializePieces();
+    }
+
+    public JTextArea getHistoryArea() {
+        return moveHistory;
     }
 
     private void initializePieces() {
@@ -78,21 +84,6 @@ public class ChessBoard extends JPanel {
 
             boolean valid = selectedPiece.isValidMove(startRow, startCol, endRow, endCol, matrix);
 
-            if (selectedPiece instanceof King && Math.abs(endCol - startCol) == 2 && startRow == endRow) {
-                valid = canCastle(startRow, startCol, endCol);
-                if (valid) doCastle(startRow, startCol, endCol);
-            }
-
-            if (selectedPiece instanceof Pawn && endCol != startCol && clicked.getPiece() == null) {
-                if (enPassantTarget != null && endRow == enPassantTarget.getRow() && endCol == enPassantTarget.getCol()) {
-                    clicked.setPiece(selectedPiece);
-                    board[startRow][startCol].setPiece(null);
-                    board[startRow][endCol].setPiece(null);
-                    finishTurn(clicked, selectedPiece);
-                    return;
-                }
-            }
-
             if (valid) {
                 clicked.setPiece(selectedPiece);
                 selectedSquare.setPiece(null);
@@ -107,11 +98,41 @@ public class ChessBoard extends JPanel {
                     enPassantTarget = null;
                 }
 
+                String moveNotation = selectedPiece.getSymbol() + " " + (char)(startCol + 'a') + (8 - startRow)
+                        + " to " + (char)(endCol + 'a') + (8 - endRow);
+                moveHistory.append(moveNotation + "\n");
+
                 finishTurn(clicked, selectedPiece);
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid move!");
                 resetSquareColor(selectedSquare);
                 selectedSquare = null;
+            }
+        }
+    }
+
+    public void movePiece(AIPlayer.Move move) {
+        Piece p = board[move.fromRow][move.fromCol].getPiece();
+        board[move.toRow][move.toCol].setPiece(p);
+        board[move.fromRow][move.fromCol].setPiece(null);
+
+        if (p instanceof Pawn && (move.toRow == 0 || move.toRow == 7)) {
+            board[move.toRow][move.toCol].setPiece(new Queen(p.isWhite()));
+        }
+
+        String moveNotation = p.getSymbol() + " " + (char)(move.fromCol + 'a') + (8 - move.fromRow)
+                + " to " + (char)(move.toCol + 'a') + (8 - move.toRow);
+        moveHistory.append(moveNotation + "\n");
+
+        whiteTurn = true;
+        repaint();
+
+        if (isKingInCheck(!whiteTurn)) {
+            if (isCheckmate(!whiteTurn)) {
+                JOptionPane.showMessageDialog(this, "White wins by checkmate!");
+                disableBoard();
+            } else {
+                JOptionPane.showMessageDialog(this, "White is in check!");
             }
         }
     }
@@ -141,65 +162,6 @@ public class ChessBoard extends JPanel {
                 }
             }).start();
         }
-    }
-
-    public void movePiece(AIPlayer.Move move) {
-        Piece p = board[move.fromRow][move.fromCol].getPiece();
-        board[move.toRow][move.toCol].setPiece(p);
-        board[move.fromRow][move.fromCol].setPiece(null);
-
-        if (p instanceof Pawn && (move.toRow == 0 || move.toRow == 7)) {
-            board[move.toRow][move.toCol].setPiece(new Queen(p.isWhite()));
-        }
-
-        whiteTurn = true;
-        repaint();
-
-        if (isKingInCheck(!whiteTurn)) {
-            if (isCheckmate(!whiteTurn)) {
-                JOptionPane.showMessageDialog(this, "White wins by checkmate!");
-                disableBoard();
-            } else {
-                JOptionPane.showMessageDialog(this, "White is in check!");
-            }
-        }
-    }
-
-    private boolean canCastle(int row, int kingCol, int endCol) {
-        if (isKingInCheck(whiteTurn)) return false;
-        int direction = endCol - kingCol > 0 ? 1 : -1;
-        int rookCol = (direction == 1) ? 7 : 0;
-        Piece rook = board[row][rookCol].getPiece();
-        if (!(rook instanceof Rook) || rook.isWhite() != whiteTurn) return false;
-
-        for (int c = kingCol + direction; c != rookCol; c += direction) {
-            if (board[row][c].getPiece() != null) return false;
-        }
-
-        for (int c = kingCol; c != endCol + direction; c += direction) {
-            Piece backup = board[row][c].getPiece();
-            board[row][c].setPiece(new King(whiteTurn));
-            if (isKingInCheck(whiteTurn)) {
-                board[row][c].setPiece(backup);
-                return false;
-            }
-            board[row][c].setPiece(backup);
-        }
-
-        return true;
-    }
-
-    private void doCastle(int row, int kingCol, int endCol) {
-        int direction = endCol - kingCol > 0 ? 1 : -1;
-        int rookCol = (direction == 1) ? 7 : 0;
-        int newRookCol = endCol - direction;
-        Piece king = board[row][kingCol].getPiece();
-        Piece rook = board[row][rookCol].getPiece();
-
-        board[row][endCol].setPiece(king);
-        board[row][kingCol].setPiece(null);
-        board[row][newRookCol].setPiece(rook);
-        board[row][rookCol].setPiece(null);
     }
 
     private void resetSquareColor(Square square) {
