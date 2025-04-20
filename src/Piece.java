@@ -10,4 +10,6 @@ public abstract class Piece {
     }
 
     public abstract String getSymbol();
+
+    public abstract boolean isValidMove(int startRow, int startCol, int endRow, int endCol, Piece[][] board);
 }

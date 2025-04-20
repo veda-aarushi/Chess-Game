@@ -16,8 +16,8 @@ public class ChessBoard extends JPanel {
             for (int col = 0; col < SIZE; col++) {
                 Square square = new Square(row, col, isWhite);
                 board[row][col] = square;
-                this.add(square);
                 square.addActionListener(e -> handleClick(square));
+                this.add(square);
                 isWhite = !isWhite;
             }
         }
@@ -62,20 +62,30 @@ public class ChessBoard extends JPanel {
                 clicked.setBackground(Color.YELLOW);
             }
         } else {
-            // Second click
             if (clicked == selectedSquare) {
+                // Deselect
                 resetSquareColor(clicked);
                 selectedSquare = null;
                 return;
             }
 
-            clicked.setPiece(selectedSquare.getPiece());
-            selectedSquare.setPiece(null);
+            Piece selectedPiece = selectedSquare.getPiece();
+            int startRow = selectedSquare.getRow();
+            int startCol = selectedSquare.getCol();
+            int endRow = clicked.getRow();
+            int endCol = clicked.getCol();
 
-            resetSquareColor(selectedSquare);
-            resetSquareColor(clicked);
+            if (selectedPiece.isValidMove(startRow, startCol, endRow, endCol, getPieceMatrix())) {
+                clicked.setPiece(selectedPiece);
+                selectedSquare.setPiece(null);
+                resetSquareColor(selectedSquare);
+                resetSquareColor(clicked);
+                whiteTurn = !whiteTurn;
+            } else {
+                JOptionPane.showMessageDialog(this, "Invalid move!");
+                resetSquareColor(selectedSquare);
+            }
 
-            whiteTurn = !whiteTurn;
             selectedSquare = null;
         }
     }
@@ -84,5 +94,15 @@ public class ChessBoard extends JPanel {
         int r = square.getRow();
         int c = square.getCol();
         square.setBackground((r + c) % 2 == 0 ? Color.WHITE : Color.GRAY);
+    }
+
+    private Piece[][] getPieceMatrix() {
+        Piece[][] matrix = new Piece[SIZE][SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                matrix[i][j] = board[i][j].getPiece();
+            }
+        }
+        return matrix;
     }
 }
