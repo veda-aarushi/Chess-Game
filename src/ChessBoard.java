@@ -1,3 +1,4 @@
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -77,18 +78,16 @@ public class ChessBoard extends JPanel {
 
             boolean valid = selectedPiece.isValidMove(startRow, startCol, endRow, endCol, matrix);
 
-            // Special move: castling
             if (selectedPiece instanceof King && Math.abs(endCol - startCol) == 2 && startRow == endRow) {
                 valid = canCastle(startRow, startCol, endCol);
                 if (valid) doCastle(startRow, startCol, endCol);
             }
 
-            // Special move: en passant
             if (selectedPiece instanceof Pawn && endCol != startCol && clicked.getPiece() == null) {
                 if (enPassantTarget != null && endRow == enPassantTarget.getRow() && endCol == enPassantTarget.getCol()) {
                     clicked.setPiece(selectedPiece);
                     board[startRow][startCol].setPiece(null);
-                    board[startRow][endCol].setPiece(null); // captured pawn
+                    board[startRow][endCol].setPiece(null);
                     finishTurn(clicked, selectedPiece);
                     return;
                 }
@@ -98,12 +97,10 @@ public class ChessBoard extends JPanel {
                 clicked.setPiece(selectedPiece);
                 selectedSquare.setPiece(null);
 
-                // Pawn Promotion
                 if (selectedPiece instanceof Pawn && (endRow == 0 || endRow == 7)) {
-                    clicked.setPiece(new Queen(selectedPiece.isWhite())); // auto promote to Queen
+                    clicked.setPiece(new Queen(selectedPiece.isWhite()));
                 }
 
-                // En Passant Target Update
                 if (selectedPiece instanceof Pawn && Math.abs(endRow - startRow) == 2) {
                     enPassantTarget = board[(startRow + endRow) / 2][endCol];
                 } else {
@@ -133,23 +130,52 @@ public class ChessBoard extends JPanel {
                 JOptionPane.showMessageDialog(this, (whiteTurn ? "Black" : "White") + " is in check!");
             }
         }
+
+        if (!whiteTurn) {
+            new Thread(() -> {
+                try {
+                    Thread.sleep(500);
+                    AIPlayer.makeAIMove(this);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
+    }
+
+    public void movePiece(AIPlayer.Move move) {
+        Piece p = board[move.fromRow][move.fromCol].getPiece();
+        board[move.toRow][move.toCol].setPiece(p);
+        board[move.fromRow][move.fromCol].setPiece(null);
+
+        if (p instanceof Pawn && (move.toRow == 0 || move.toRow == 7)) {
+            board[move.toRow][move.toCol].setPiece(new Queen(p.isWhite()));
+        }
+
+        whiteTurn = true;
+        repaint();
+
+        if (isKingInCheck(!whiteTurn)) {
+            if (isCheckmate(!whiteTurn)) {
+                JOptionPane.showMessageDialog(this, "White wins by checkmate!");
+                disableBoard();
+            } else {
+                JOptionPane.showMessageDialog(this, "White is in check!");
+            }
+        }
     }
 
     private boolean canCastle(int row, int kingCol, int endCol) {
         if (isKingInCheck(whiteTurn)) return false;
-
         int direction = endCol - kingCol > 0 ? 1 : -1;
         int rookCol = (direction == 1) ? 7 : 0;
-
         Piece rook = board[row][rookCol].getPiece();
         if (!(rook instanceof Rook) || rook.isWhite() != whiteTurn) return false;
 
-        // Check path is clear
         for (int c = kingCol + direction; c != rookCol; c += direction) {
             if (board[row][c].getPiece() != null) return false;
         }
 
-        // Ensure squares king crosses are not under attack
         for (int c = kingCol; c != endCol + direction; c += direction) {
             Piece backup = board[row][c].getPiece();
             board[row][c].setPiece(new King(whiteTurn));
@@ -167,27 +193,13 @@ public class ChessBoard extends JPanel {
         int direction = endCol - kingCol > 0 ? 1 : -1;
         int rookCol = (direction == 1) ? 7 : 0;
         int newRookCol = endCol - direction;
-
         Piece king = board[row][kingCol].getPiece();
         Piece rook = board[row][rookCol].getPiece();
 
         board[row][endCol].setPiece(king);
         board[row][kingCol].setPiece(null);
-
         board[row][newRookCol].setPiece(rook);
         board[row][rookCol].setPiece(null);
-
-        whiteTurn = !whiteTurn;
-        selectedSquare = null;
-
-        if (isKingInCheck(!whiteTurn)) {
-            if (isCheckmate(!whiteTurn)) {
-                JOptionPane.showMessageDialog(this, (whiteTurn ? "White" : "Black") + " wins by checkmate!");
-                disableBoard();
-            } else {
-                JOptionPane.showMessageDialog(this, (whiteTurn ? "Black" : "White") + " is in check!");
-            }
-        }
     }
 
     private void resetSquareColor(Square square) {
@@ -196,7 +208,7 @@ public class ChessBoard extends JPanel {
         square.setBackground((r + c) % 2 == 0 ? Color.WHITE : Color.GRAY);
     }
 
-    private Piece[][] getPieceMatrix() {
+    public Piece[][] getPieceMatrix() {
         Piece[][] matrix = new Piece[SIZE][SIZE];
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
@@ -224,8 +236,8 @@ public class ChessBoard extends JPanel {
 
         int kingRow = kingSquare.getRow();
         int kingCol = kingSquare.getCol();
-
         Piece[][] matrix = getPieceMatrix();
+
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 Piece attacker = matrix[i][j];
